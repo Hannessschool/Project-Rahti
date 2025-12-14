@@ -1,16 +1,20 @@
-# rahti2-fastapi 
+# docker-fastapi 
+
+A sample project for deploying to a PaaS Service like Render or CSC Rahti.
+
+### For deployment to Render
+
+- Log in to https://render.com/
+- Create a New Web Service.
+- Connect to GitHub and choose Connect Credentials.
+- Set Language to Docker.
+- Select the EU Central region (or whatever is nearest to you)
+- Choose Instance Type: Free.
 
 ### For deployment to Rahti2
 
-Note: OpenShift wants the main branch to be named *master* by default, you have two options:
-1. Push to origin/master to deploy
-2. Change the setting in Openshift to *main*:    
+Note: Change the Git reference setting in Openshift to *main*:    
     Edit BuildConfig ==> Show advanced git options ==> Git reference: `main`
-
-
-See also: https://fastapi.tiangolo.com/deployment/docker/
-
-
 
 ### For local real-time development
 
