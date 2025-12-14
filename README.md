@@ -11,7 +11,7 @@ A sample project for deploying to a PaaS Service like Render or CSC Rahti.
 - Select the EU Central region (or whatever is nearest to you)
 - Choose Instance Type: Free.
 
-### For deployment to Rahti2
+### For deployment to CSC Rahti
 
 Note: Change the Git reference setting in Openshift to *main*:    
     Edit BuildConfig ==> Show advanced git options ==> Git reference: `main`
