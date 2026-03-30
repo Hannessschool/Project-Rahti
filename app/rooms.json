@@ -1,0 +1,15 @@
+{
+  "data": [
+    { "id": 2001, "name": "Standard Room", "price": 79 },
+    { "id": 2002, "name": "Superior Room", "price": 119 },
+    { "id": 2003, "name": "Deluxe Suite", "price": 189 },
+    { "id": 2004, "name": "Executive Suite", "price": 249 },
+    { "id": 2005, "name": "Presidential Suite", "price": 499.99 }
+  ],
+  "links": [
+    { "href": "/rooms" }
+  ],
+  "debugInfo": {
+    "request": [],
+    "method": "GET"
+  }

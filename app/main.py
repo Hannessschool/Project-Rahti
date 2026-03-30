@@ -1,10 +1,12 @@
-from fastapi import FastAPI, requests, Request
+from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
+import json
+import os
+
 
 ###CC: What Is My IP
 app = FastAPI()
-apiUrl = "https://fastapi-myproj.rahtiapp.fi/rooms"
 
 origins = ["*"]
 app.add_middleware(
@@ -36,10 +38,13 @@ def hello():
 ###CC: Hotellbokning 0.1
 @app.get("/rooms")
 def get_rooms(request: Request):
-    response = requests.get(apiUrl)
-    data = response.json()
-
     client_ip = request.client.host
+
+    json_path = os.path.join(os.path.dirname(__file__), rooms.json)
+    
+    with open(json_path, "r", encoding="utf-8") as file:
+        data = json.load(file)
+
     return {
         "client_ip": client_ip,
         "rooms": data

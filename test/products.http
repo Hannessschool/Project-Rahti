@@ -1,4 +1,4 @@
-@apiUrl = https://fastapi-myproj.rahtiapp.fi/rooms
+@apiUrl = https://fastapi-myproj.rahtiapp.fi/products
 
 ### get all products
 GET {{apiUrl}}
