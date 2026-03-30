@@ -1,0 +1,33 @@
+@apiUrl = https://fastapi-myproj.rahtiapp.fi/rooms
+
+### get all products
+GET {{apiUrl}}
+
+### get one product
+GET {{apiUrl}}/1002
+
+### create a new product; specify JSON, otherwise only form is sent,not real product
+POST {{apiUrl}}
+Content-Type: application/json
+{
+      "name": "Jeans",
+      "price": 40
+}
+
+### delete product
+DELETE {{apiUrl}}/1005
+
+### Update product (put)
+PUT {{apiUrl}}/1004
+{
+      "name": "Jeans",
+      "price": 40
+}
+
+### Update product  (patch)
+PATCH {{apiUrl}}/1001
+Content-Type: application/json
+{
+      "price": 15
+}
+
