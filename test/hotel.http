@@ -1,3 +1,13 @@
-@apiUrl = https://project-rahti-git-eerolaha-rahti.2.rahtiapp.fi/rooms
+@apiUrl = http://127.0.0.1:8080 
 
-GET {{apiUrl}}
+GET {{apiUrl}}/rooms
+
+##get booking
+GET {{apiUrl}}/bookings
+
+##create new booking
+POST {{apiUrl}}/bookings
+Content-type: application/json
+{
+    "room_id: 1"
+}
