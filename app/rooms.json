@@ -11,6 +11,9 @@
   ],
   "debugInfo": {
     "request": [],
-    "method": "GET"
+    "method": "GET",
+    "$comment": "Detta kunde användas för alternativ lösning av hotellbokning 0.1",
+    "enabled": true
   }
+
 }
