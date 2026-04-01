@@ -1,6 +1,8 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
+from app.db import get_conn
+from app.db import create_schema
 #import json
 #import os
 
@@ -16,6 +18,16 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+#skapa databas_schema
+create_schema()
+
+#testa databasen
+with get_conn() as conn, conn.cursor() as cur:
+    cur.execute("""
+            SELECT 'databasen funkar'
+        """)
+    print(cur.fetchone())
 
 ###tillfällig databas, lösning för hotellbokning 0.1
 
@@ -67,4 +79,4 @@ def rooms():
 
 @app.post("/bookings")
 def create_booking():
-    return{"msg: Bokning skapad"}  ##skapa bokningar i databasen
+    return{"msg: Booking made"}  ##skapa bokningar i databasen
