@@ -6,6 +6,8 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 def get_conn():
     return psycopg.connect(DATABASE_URL, autocommit=True, row_factory=psycopg.rows.dict_row)
 
+
+
 def create_schema():
         with get_conn() as conn, conn.cursor() as cur:
             # Create the schema
@@ -15,17 +17,15 @@ def create_schema():
                     id SERIAL PRIMARY KEY, -- primary key
                     created_at TIMESTAMP DEFAULT now()
                 );
-                        
-                --nya tabeller inuti 
-                CREATE TABLE IF NOT EXISTS sub_foo(
-                    id SERIAL PRIMARY KEY, -- primary key
+                
+                -- sample child table
+                CREATE TABLE IF NOT EXISTS bar (
+                    id SERIAL PRIMARY KEY,
+                    foo_id INT REFERENCES foo(id), -- foreign key
                     created_at TIMESTAMP DEFAULT now()
-                    foo_id INR REFERENCES foo(id),
-                        info VARCHAR,    
-                ;)
+                );
 
-                --lägg till nya kolumner
+                -- adding columns after the fact
                 ALTER TABLE foo ADD COLUMN IF NOT EXISTS name VARCHAR;
-                ;)                  
-                        """)
+                ALTER TABLE foo ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT now()""")
 
