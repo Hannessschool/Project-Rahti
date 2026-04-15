@@ -2,8 +2,10 @@ from fastapi import FastAPI
 from fastapi import Request
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 from app.db import get_conn
 from app.db import create_schema
+from datetime import date
 #import json
 #import os
 
@@ -22,6 +24,11 @@ app.add_middleware(
 
 #skapa databas_schema
 create_schema()
+
+#datamodell för bokning, kan användas i post request
+class Booking(BaseModel):
+    guest_id: int
+    room_id: int
 
 #testa databasen
 with get_conn() as conn, conn.cursor() as cur:
@@ -58,15 +65,54 @@ def hello():
     return {"msg": f"Morjens Doris"} 
 
 
-###CC: Hotellbokning 0.1
-#@app.get("/rooms")
-#def get_rooms(request: Request):
-    #json_path = os.path.join(os.path.dirname(__file__), "rooms.json")
-    
-    #with open(json_path, "r", encoding="utf-8") as file:
-        #data = json.load(file)
+##list all rooms
+@app.get("/rooms")
+def get_rooms():
+    with get_conn() as conn, conn.cursor() as cur:
+        cur.execute("""
+            SELECT * 
+            FROM hotel_rooms
+            ORDER by room_number
+        """)
+    rooms = cur.fetchall()
+    return rooms
 
-    #return data
+##get one room by id
+@app.get("/rooms/{room_id}")
+def get_room(room_id: int):
+        with get_conn() as conn, conn.cursor() as cur:
+            cur.execute("""
+                SELECT * 
+                FROM hotel_rooms
+                WHERE id = %s
+            """, [room_id])  #list här, tuple används också, skriv inte f-strings för kan manipuleras med några citattecken
+            room = cur.fetchone()
+        return room
+
+
+
+@app.get("/")
+def read_root():
+    with get_conn() as conn, conn.cursor() as cur:
+        cur.execute("SELECT version() ")
+        result = cur.fetchone()
+        return {"msg": f"Hotel API!", "db_status": result }
+    
+
+@app.get("/if/{term}")
+def if_test(term: str):
+    ret_str = "Default message..."
+    if (term == "hello"
+        or term == "hi"
+        or term == "greetings"):
+
+        ret_str = "Hello to you too!"
+    elif (term == "morjens" or term == "hej") and 1 == 0:
+        ret_str = "Hej på dig med!"
+    else:
+        ret_str = f"vad betyder {term}?"
+    return {"msg": ret_str}
+
 
 @app.get("/")
 def read_root():
@@ -79,5 +125,17 @@ def rooms():
 
 
 @app.post("/bookings")
-def create_booking():
-    return{"msg: Booking made"}  ##skapa bokningar i databasen
+def create_booking(booking: Booking):
+    with get_conn() as conn, conn.cursor() as cur:
+        cur.execute("""
+           INSERT INTO hotel_bookings (
+                guest_id, 
+                room_id
+                ) VALUES (
+                    %s, 
+                    %s)
+        """, (
+            booking.guest_id, 
+            booking.room_id
+            ))
+    return {"msg": "Booking made", "id": booking.room_id}  ##skapa bokningar i databasen

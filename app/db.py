@@ -39,6 +39,8 @@ def create_schema():
 
             cur.execute("""
                 -- sample parent table
+                        
+                -- rooms        
                 CREATE TABLE IF NOT EXISTS hotel_rooms (
                     id SERIAL PRIMARY KEY,
                     room_number INT NOT NULL, 
@@ -46,7 +48,8 @@ def create_schema():
                     price DECIMAL(10,2) NOT NULL,
                     created_at TIMESTAMP DEFAULT now()
                 );
-                        
+
+                -- guests          
                 CREATE TABLE IF NOT EXISTS hotel_guests (
                     id SERIAL PRIMARY KEY,
                     firstname VARCHAR(50),
@@ -55,12 +58,13 @@ def create_schema():
                     created_at TIMESTAMP DEFAULT now()
                 );
 
+                -- bookings        
                 CREATE TABLE IF NOT EXISTS hotel_bookings (
                     id SERIAL PRIMARY KEY,
                     guest_id INT REFERENCES hotel_guests(id),
                     room_id INT REFERENCES hotel_rooms(id),
-                    datefrom DATE NOT NULL,
-                    dateto DATE NOT NULL,
+                    datefrom DATE DEFAULT now(),
+                    dateto DATE DEFAULT now(),
                     addinfo VARCHAR(200),
                     created_at TIMESTAMP DEFAULT now()
                 );""")
