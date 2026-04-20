@@ -170,3 +170,30 @@ def create_booking(booking: Booking):
             ))
             new_booking = cur.fetchone()
         return {"msg": "Booking made", "id": new_booking[0]}  ##skapa bokningar i databasen    ##%s används för att undvika sql injection, list eller tuple används för att skicka in variabler i queryn, inte f-strings!
+
+class StarsSchema(BaseModel):
+    ratings: int
+
+@app.put("/bookings/{booking_id}")
+def update_booking(booking_id: int, data: StarsSchema):
+
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+
+            cur.execute("""
+                UPDATE bookings
+                SET ratings = %s
+                WHERE booking_id = %s
+                RETURNING booking_id, ratings
+            """, (data.ratings, booking_id))
+
+            updated = cur.fetchone()
+            conn.commit()
+
+    if updated is None:
+        return {"error": "Booking not found"}
+
+    return {
+        "booking_id": updated[0],
+        "ratings": updated[1]
+    }
