@@ -1,7 +1,8 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi import Request
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import APIKeyHeader
 from pydantic import BaseModel
 from app.db import get_conn
 from app.db import create_schema
@@ -25,6 +26,22 @@ app.add_middleware(
 #skapa databas_schema
 create_schema()
 
+api_key_header_name = "X-API-Key"
+api_key_header = APIKeyHeader(name=api_key_header_name, auto_error=False)
+
+def validate_api_key(api_key: str):
+    if not api_key:
+        raise HTTPException(status_code=401, detail="API key missing")
+
+    with get_conn() as conn, conn.cursor() as cur:
+    cur.execute("""
+        SELECT * FROM guests where api_key = %s
+    """, [api_key])
+    guest = cur.fetchone()
+    if not guest:
+        raise HTTPException(status_code=403, detail="Invalid API key")
+    return guest
+
 #datamodell för bokning, kan användas i post request
 class Booking(BaseModel):
     guest_id: int
@@ -35,10 +52,9 @@ class Booking(BaseModel):
 #testa databasen
 @app.get("/")
 def read_root():
-with get_conn() as conn, conn.cursor() as cur:
+    with get_conn() as conn, conn.cursor() as cur:
     cur.execute("SELECT version()")
     result = cur.fetchone()
-
 return {"msg": f"Hotel API!", "db_status": result }
 
 ###tillfällig databas, lösning för hotellbokning 0.1
@@ -102,20 +118,17 @@ def read_root():
         result = cur.fetchone()
         return {"msg": f"Hotel API!", "db_status": result }
     
-
-@app.get("/if/{term}")
-def if_test(term: str):
-    ret_str = "Default message..."
-    if (term == "hello"
-        or term == "hi"
-        or term == "greetings"):
-
-        ret_str = "Hello to you too!"
-    elif (term == "morjens" or term == "hej") and 1 == 0:
-        ret_str = "Hej på dig med!"
-    else:
-        ret_str = f"vad betyder {term}?"
-    return {"msg": ret_str}
+@app.get("/guests")
+def get_guests():
+    with get_conn() as conn, conn.cursor() as cur:
+        cur.execute("""
+            SELECT * 
+            FROM hotel_guests
+            WHERE guest_id = %s
+            ORDER BY lastname
+        """, [guest["id"]])
+    guests = cur.fetchall()
+    return guests
 
 
 ##@app.get("/")
@@ -126,6 +139,16 @@ def if_test(term: str):
 ##@app.get("/rooms")
 ##def rooms():
     ##return temp_rooms
+
+@app.get("/bookings")
+def get_bookings(guest: dict = Depends(validate_api_key)):
+    with get_conn() as conn, conn.cursor() as cur:
+        cur.execute("""
+            SELECT * 
+            FROM hotel_bookings
+        """)
+    bookings = cur.fetchall()
+    return bookings
 
 
 @app.post("/bookings")
