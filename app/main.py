@@ -29,13 +29,17 @@ create_schema()
 class Booking(BaseModel):
     guest_id: int
     room_id: int
+    datefrom: date
+    dateto: date
 
 #testa databasen
+@app.get("/")
+def read_root():
 with get_conn() as conn, conn.cursor() as cur:
-    cur.execute("""
-            SELECT 'databasen funkar'
-        """)
-    print(cur.fetchone())
+    cur.execute("SELECT version()")
+    result = cur.fetchone()
+
+return {"msg": f"Hotel API!", "db_status": result }
 
 ###tillfällig databas, lösning för hotellbokning 0.1
 
@@ -114,14 +118,14 @@ def if_test(term: str):
     return {"msg": ret_str}
 
 
-@app.get("/")
-def read_root():
-    return { "msg": "Welcome to the hotell booking API"}
+##@app.get("/")
+##def read_root():
+    ##return { "msg": "Welcome to the hotell booking API"}
 
 ##alternativ lösning
-@app.get("/rooms")
-def rooms():
-    return temp_rooms
+##@app.get("/rooms")
+##def rooms():
+    ##return temp_rooms
 
 
 @app.post("/bookings")
@@ -131,11 +135,15 @@ def create_booking(booking: Booking):
            INSERT INTO hotel_bookings (
                 guest_id, 
                 room_id
+                datefrom,
+                dateto
                 ) VALUES (
-                    %s, 
-                    %s)
+                    %s, %s, %s ,%s) RETURNING id
         """, (
             booking.guest_id, 
-            booking.room_id
+            booking.room_id,
+            booking.datefrom,
+            booking.dateto
             ))
-    return {"msg": "Booking made", "id": booking.room_id}  ##skapa bokningar i databasen
+            new_booking = cur.fetchone()
+        return {"msg": "Booking made", "id": new_booking[0]}  ##skapa bokningar i databasen    ##%s används för att undvika sql injection, list eller tuple används för att skicka in variabler i queryn, inte f-strings!
