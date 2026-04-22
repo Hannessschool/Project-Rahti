@@ -9,6 +9,7 @@ from pydantic import BaseModel
 from app.db import get_conn
 from app.db import create_schema
 from datetime import date
+from markupsafe import escape
 
 app = FastAPI()
 
@@ -51,11 +52,7 @@ class Booking(BaseModel):
     info:str
 
 class BookingUpdate(BaseModel):
-    guest_id: int
-    room_id: int
-    datefrom: date
-    dateto: date
-    info:str
+    stars: conint(ge=1, le=5) # >= 1-5 <=
 
 #första hälsningstest för att säkerställa att API:t fungerar
 with get_conn() as conn, conn.cursor() as cur:
