@@ -67,5 +67,9 @@ def create_schema():
                     dateto DATE DEFAULT now(),
                     addinfo VARCHAR(200),
                     created_at TIMESTAMP DEFAULT now()
+
+
+                    -- lägg till pgcrypto extension
+                    CREATE EXTENSION IF NOT EXISTS "pgcrypto";
                 );""")
 

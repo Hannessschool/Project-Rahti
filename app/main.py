@@ -4,6 +4,7 @@ from fastapi.security import APIKeyHeader
 from fastapi import Request
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import APIKeyHeader
 from pydantic import BaseModel
 from app.db import get_conn
 from app.db import create_schema
