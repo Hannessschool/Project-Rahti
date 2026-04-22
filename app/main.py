@@ -1,4 +1,6 @@
-from fastapi import FastAPI
+import app
+from fastapi import FastAPI, HTTPException, Depends
+from fastapi.security import APIKeyHeader  
 from fastapi import Request
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -6,14 +8,11 @@ from pydantic import BaseModel
 from app.db import get_conn
 from app.db import create_schema
 from datetime import date
-import json
-import os
 
-
-###CC: What Is My IP
 app = FastAPI()
 
 origins = ["*"]
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -25,44 +24,57 @@ app.add_middleware(
 #skapa databas_schema
 create_schema()
 
+
+api_key_header = APIKeyHeader(name="X-API-KEY", auto_error=False)
+
+def validate_api_key(api_key: str = Depends(api_key_header)):
+    if not api_key:
+        raise HTTPException(status_code=401, detail={"error": "Invalid API Key"})
+    with get_conn() as conn, conn.cursor() as cur:
+        cur.execute("""
+            SELECT *
+            FROM hotel_guests
+            WHERE api_key = %s
+        """, [api_key])
+        guest = cur.fetchone()
+        if not guest:
+            raise HTTPException(status_code=401, detail={"error": "Invalid API Key"})
+        return guest
+
 #datamodell för bokning, kan användas i post request
 class Booking(BaseModel):
     guest_id: int
     room_id: int
+    datefrom: date
+    dateto: date
+    info:str
 
-#testa databasen
+class BookingUpdate(BaseModel):
+    guest_id: int
+    room_id: int
+    datefrom: date
+    dateto: date
+    info:str
+
+#första hälsningstest för att säkerställa att API:t fungerar
 with get_conn() as conn, conn.cursor() as cur:
     cur.execute("""
             SELECT 'databasen funkar'
         """)
     print(cur.fetchone())
 
-###tillfällig databas, lösning för hotellbokning 0.1
+#första hälsningstest för att säkerställa att API:t fungerar
+@app.get("/")
+def read_root():
+    return { "msg": "Welcome to the hotell booking API"}
 
-temp_rooms = [
-    { "room_id": 101, "room_name": "Double room", "price": 100},
-    { "room_id": 101, "room_name": "Single room", "price": 70},
-    { "room_id": 101, "room_name": "Suite", "price": 150}
-    ]
-
-
-
-@app.get("/api/ip")
-async def get_ip(request: Request):
-    client_ip = request.client.host
-    return { "ip": client_ip}
-
-
-@app.get("/ip", response_class=HTMLResponse)
-async def get_ip_html(request: Request):
-    client_ip = request.client.host
-    return f"<h1> Din publika IP-adress är {client_ip} </h1>"
-
-
-###CC: CSC Rahti Docker Workflow
-@app.get("/hello")
-def hello():
-    return {"msg": f"Morjens Doris"} 
+#första hälsningstest för att säkerställa att API:t fungerar
+@app.get("/")
+def read_root():
+    with get_conn() as conn, conn.cursor() as cur:
+        cur.execute("SELECT version() ")
+        result = cur.fetchone()
+        return {"msg": f"Hotel API!", "db_status": result }
 
 
 ##list all rooms
@@ -91,51 +103,79 @@ def get_room(room_id: int):
 
 
 
-@app.get("/")
-def read_root():
+#lista alla bokningar
+@app.get("/bookings")
+def get_bookings(guest: dict = Depends(validate_api_key)):
+    print(guest)
     with get_conn() as conn, conn.cursor() as cur:
-        cur.execute("SELECT version() ")
-        result = cur.fetchone()
-        return {"msg": f"Hotel API!", "db_status": result }
-    
-
-@app.get("/if/{term}")
-def if_test(term: str):
-    ret_str = "Default message..."
-    if (term == "hello"
-        or term == "hi"
-        or term == "greetings"):
-
-        ret_str = "Hello to you too!"
-    elif (term == "morjens" or term == "hej") and 1 == 0:
-        ret_str = "Hej på dig med!"
-    else:
-        ret_str = f"vad betyder {term}?"
-    return {"msg": ret_str}
-
-
-@app.get("/")
-def read_root():
-    return { "msg": "Welcome to the hotell booking API"}
-
-##alternativ lösning
-@app.get("/rooms")
-def rooms():
-    return temp_rooms
+        cur.execute("""
+            SELECT 
+                r.room_number,
+                g.firstname || ' ' || g.lastname AS guest_name,
+                (b.dateto - b.datefrom) AS nights,
+                r.price as price_per_night,
+                CASE 
+                    WHEN (b.dateto - b.datefrom) >= 7 THEN 
+                        -- 20 percent discount
+                        (b.dateto - b.datefrom) * r.price * 0.8
+                    ELSE (b.dateto - b.datefrom) * r.price
+                END as total_price,
+                b.*
+            FROM bookings b
+            INNER JOIN rooms r
+                ON r.id = b.room_id
+            INNER JOIN guests g
+                ON g.id = b.guest_id
+            WHERE b.guest_id = %s
+            ORDER BY id
+        """, [guest['id']])  ##säkerställ att endast bokningar för den inloggade gästen returneras
+    bookings = cur.fetchall()
+    return bookings
 
 
+#Skapa bokningar i databasen, returnera id på den nya bokningen
 @app.post("/bookings")
 def create_booking(booking: Booking):
     with get_conn() as conn, conn.cursor() as cur:
         cur.execute("""
            INSERT INTO hotel_bookings (
                 guest_id, 
-                room_id
+                room_id,
+                datefrom, 
+                dateto
                 ) VALUES (
                     %s, 
-                    %s)
+                    %s, 
+                    %s, 
+                    %s
+                ) RETURNING id
         """, (
             booking.guest_id, 
-            booking.room_id
+            booking.room_id,
+            booking.datefrom,
+            booking.dateto
             ))
+        new_booking = cur.fetchone()
     return {"msg": "Booking made", "id": booking.room_id}  ##skapa bokningar i databasen
+
+##
+@app.put("/bookings")
+def update_booking(id: int, booking: BookingUpdate):
+    with get_conn() as conn, conn.cursor() as cur:
+        cur.execute("""
+           UPDATE hotel_bookings SET
+                stars = %s, 
+           WHERE id = %s
+                AND guest_id = %s
+            RETURNING *
+        """, (
+            booking.guest_id, 
+            booking.room_id,
+            booking.datefrom,
+            booking.dateto,
+            id
+            ))
+        updated_booking = cur.fetchone()
+
+    return {"msg": "Booking updated", "id": id}  ##skapa bokningar i databasen
+

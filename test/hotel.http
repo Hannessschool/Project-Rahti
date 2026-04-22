@@ -8,6 +8,7 @@ GET {{apiUrl}}/bookings
 ##create new booking
 POST {{apiUrl}}/bookings
 Content-type: application/json
+API-KEY: 1234567890
 {
     "room_id": 1,
     "guest_id": 1,
