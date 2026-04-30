@@ -23,16 +23,10 @@ spec:
           value: devdb
         - name: POSTGRES_USER
           value: devuser
-        #- name: POSTGRES_PASSWORD
-        #  value: devpassword
-        # OPTIONALLY use a password from Secrets on OpenShift, like so:
         - name: POSTGRES_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: postgresql
-              key: database-password
-        
-        # DATABASE_URL=postgresql://devuser:devpassword@postgres:5432/devdb
+          value: devpassword
+        - name: DATABASE_URL
+          value: postgresql://devuser:devpassword@postgres:5432/devdb
         image: postgres:14.20-trixie
         imagePullPolicy: IfNotPresent
         name: postgresql
